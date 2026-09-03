@@ -4,13 +4,21 @@ zdo is a small local todo app for the terminal, built with Bun, TypeScript, Reac
 
 ## Install zdo
 
-Install [Bun](https://bun.sh/docs/installation), then install zdo from GitHub:
+Install [Bun](https://bun.sh/docs/installation), then clone zdo and install its dependencies:
 
 ```sh
-bun install --global github:zaeemadamjee/zdo
+git clone https://github.com/zaeemadamjee/zdo.git
+cd zdo
+bun install
 ```
 
-Run zdo from any directory:
+Register the checkout as a global executable:
+
+```sh
+bun link
+```
+
+You can now run zdo from any directory:
 
 ```sh
 zdo
@@ -25,10 +33,10 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 Add those lines to `~/.zshrc` to keep the setting after you restart the shell.
 
-To remove zdo, run:
+`bun link` points the global command at your checkout, so keep the cloned directory in place. To remove the global command, run this from the repository:
 
 ```sh
-bun remove --global zdo
+bun unlink
 ```
 
 ## Run from source
