@@ -1,0 +1,26 @@
+{
+  "name": "zdo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "zdo": "./src/main.tsx"
+  },
+  "scripts": {
+    "dev": "bun --watch src/main.tsx",
+    "start": "bun src/main.tsx",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "verify": "bun scripts/verify.ts"
+  },
+  "dependencies": {
+    "@opentui/core": "0.5.10",
+    "@opentui/react": "0.5.10",
+    "react": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "@types/react": "19.2.18",
+    "typescript": "5.9.3"
+  }
+}
