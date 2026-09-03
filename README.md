@@ -52,16 +52,21 @@ For automatic restarts while editing, run `bun run dev`.
 
 ## Controls
 
+Keyboard controls work throughout the app. Mouse controls depend on terminal mouse support.
+
 | Action | Keyboard | Mouse |
 | --- | --- | --- |
 | Move selection | `↑`, `↓`, `j`, or `k` | Click a row |
 | Toggle selected item | `Space` | Click its checkbox |
 | Add a task | `a` | Click **Add task** |
 | Add a subtask | `s` | Click **Add subtask** |
+| Save a new task or subtask | `Enter` | Not available |
+| Cancel a new task or subtask | `Esc` | Not available |
 | Delete selected item | `d` | Click **Delete** |
-| Scroll the list | — | Use the mouse wheel |
-| Cancel a prompt | `Esc` | Click **Cancel**, where shown |
-| Quit | `q` or `Ctrl-C` | — |
+| Confirm deletion | `y` or `Enter` | Click **Delete** |
+| Cancel deletion | `n` or `Esc` | Click **Cancel** |
+| Scroll the list | Not available | Use the mouse wheel |
+| Quit | `q` or `Ctrl-C` | Not available |
 
 If a subtask is selected, adding a subtask creates a sibling under the same parent. Deleting a task that contains subtasks requires confirmation. Deleting that parent also deletes its subtasks.
 
