@@ -27,7 +27,8 @@ function fixture(): TodoState {
 
 // The input parser holds a lone escape byte briefly to tell it apart from an
 // escape sequence, so waiting on render passes alone is not enough after Esc.
-// Each flush gets its own act() so React commits the resulting state updates.
+// Each poll sleeps and flushes inside act() so the debounced key event and the
+// state updates it causes both land inside React's test boundary.
 async function waitForFrameText(
   setup: Awaited<ReturnType<typeof renderFixture>>["setup"],
   text: string,
@@ -35,9 +36,11 @@ async function waitForFrameText(
 ): Promise<void> {
   const deadline = Date.now() + timeoutMs
   while (Date.now() < deadline) {
-    await act(async () => { await setup.flush() })
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      await setup.flush()
+    })
     if (setup.captureCharFrame().includes(text)) return
-    await new Promise((resolve) => setTimeout(resolve, 10))
   }
   throw new Error(`Timed out waiting for "${text}" in frame`)
 }
