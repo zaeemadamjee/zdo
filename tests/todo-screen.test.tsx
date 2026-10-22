@@ -25,6 +25,23 @@ function fixture(): TodoState {
   }
 }
 
+// The input parser holds a lone escape byte briefly to tell it apart from an
+// escape sequence, so waiting on render passes alone is not enough after Esc.
+// Each flush gets its own act() so React commits the resulting state updates.
+async function waitForFrameText(
+  setup: Awaited<ReturnType<typeof renderFixture>>["setup"],
+  text: string,
+  timeoutMs = 1000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    await act(async () => { await setup.flush() })
+    if (setup.captureCharFrame().includes(text)) return
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+  throw new Error(`Timed out waiting for "${text}" in frame`)
+}
+
 async function renderFixture() {
   let persisted = fixture()
   const store: TodoStore = {
@@ -197,8 +214,8 @@ test("Esc cancels a rename without persisting anything", async () => {
   await setup.flush()
   await act(async () => {
     setup.mockInput.pressEscape()
-    await setup.waitFor(() => setup.captureCharFrame().includes("Rename cancelled"))
   })
+  await waitForFrameText(setup, "Rename cancelled")
 
   expect(setup.captureCharFrame()).toContain("Rename cancelled")
   expect(String(persisted().tasks[0]!.title)).toBe("Parent")
