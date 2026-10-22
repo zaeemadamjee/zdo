@@ -2,21 +2,23 @@
 
 zdo is a small local todo app for the terminal, built with Bun, TypeScript, React, and OpenTUI. It supports one level of subtasks. A task and its subtasks have independent completion states. Completing one never changes the others.
 
+![zdo running in a terminal](assets/app.jpeg)
+
 ## Install zdo
 
-Install [Bun](https://bun.sh/docs/installation), then clone zdo and install its dependencies:
+zdo runs on [Bun](https://bun.sh/docs/installation), so install Bun first. Then install zdo globally:
 
 ```sh
-git clone https://github.com/zaeemadamjee/zdo.git
-cd zdo
-bun install
+bun install -g @zaeemadamjee/zdo
 ```
 
-Register the checkout as a global executable:
+Or run it once without installing:
 
 ```sh
-bun link
+bunx @zaeemadamjee/zdo
 ```
+
+npm and pnpm also work (`npm install -g @zaeemadamjee/zdo`), but Bun must still be installed because the `zdo` command runs under the Bun runtime.
 
 You can now run zdo from any directory:
 
@@ -33,11 +35,18 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 Add those lines to `~/.zshrc` to keep the setting after you restart the shell.
 
-`bun link` points the global command at your checkout, so keep the cloned directory in place. To remove the global command, run this from the repository:
+### Install from a checkout
+
+To run your own checkout as the global command instead, clone the repository and link it:
 
 ```sh
-bun unlink
+git clone https://github.com/zaeemadamjee/zdo.git
+cd zdo
+bun install
+bun link
 ```
+
+`bun link` points the global command at your checkout, so keep the cloned directory in place. To remove the global command, run `bun unlink` from the repository.
 
 ## Run from source
 
@@ -93,3 +102,7 @@ bun run verify
 ```
 
 It runs strict TypeScript checking followed by the behavior test suite.
+
+## License
+
+[MIT](LICENSE)

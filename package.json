@@ -1,10 +1,30 @@
 {
-  "name": "zdo",
+  "name": "@zaeemadamjee/zdo",
   "version": "0.1.0",
-  "private": true,
+  "description": "A small local todo app for the terminal, built with Bun and OpenTUI",
+  "license": "MIT",
+  "author": "Zaeem Adamjee",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zaeemadamjee/zdo.git"
+  },
+  "homepage": "https://github.com/zaeemadamjee/zdo#readme",
+  "bugs": "https://github.com/zaeemadamjee/zdo/issues",
+  "keywords": ["todo", "tui", "terminal", "bun", "opentui", "react"],
   "bin": {
     "zdo": "./src/main.tsx"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "bun": ">=1.2"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "bun --watch src/main.tsx",
