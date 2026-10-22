@@ -31,6 +31,7 @@ export type TodoMutation =
   | Readonly<{ kind: "insert-task"; task: Task }>
   | Readonly<{ kind: "insert-subtask"; taskId: TaskId; subtask: Subtask }>
   | Readonly<{ kind: "toggle"; target: ItemRef }>
+  | Readonly<{ kind: "rename"; target: ItemRef; title: TodoTitle }>
   | Readonly<{ kind: "remove"; target: ItemRef }>
 
 export type MutationResult =
@@ -88,6 +89,26 @@ function hasId(state: TodoState, candidate: string): boolean {
   )
 }
 
+type ItemPatch = <T extends Task | Subtask>(item: T) => T
+
+function updateItem(state: TodoState, target: ItemRef, patch: ItemPatch): MutationResult {
+  let found = false
+  const tasks = state.tasks.map((task) => {
+    if (task.id !== target.taskId) return task
+    if (target.kind === "task") {
+      found = true
+      return patch(task)
+    }
+    const subtasks = task.subtasks.map((subtask) => {
+      if (subtask.id !== target.subtaskId) return subtask
+      found = true
+      return patch(subtask)
+    })
+    return found ? { ...task, subtasks } : task
+  })
+  return found ? { kind: "changed", state: { tasks } } : { kind: "rejected", reason: "missing-target" }
+}
+
 export function applyMutation(state: TodoState, mutation: TodoMutation): MutationResult {
   switch (mutation.kind) {
     case "insert-task": {
@@ -104,31 +125,10 @@ export function applyMutation(state: TodoState, mutation: TodoMutation): Mutatio
       })
       return found ? { kind: "changed", state: { tasks } } : { kind: "rejected", reason: "missing-target" }
     }
-    case "toggle": {
-      if (mutation.target.kind === "task") {
-        const target = mutation.target
-        let found = false
-        const tasks = state.tasks.map((task) => {
-          if (task.id !== target.taskId) return task
-          found = true
-          return { ...task, completed: !task.completed }
-        })
-        return found ? { kind: "changed", state: { tasks } } : { kind: "rejected", reason: "missing-target" }
-      }
-
-      const target = mutation.target
-      let found = false
-      const tasks = state.tasks.map((task) => {
-        if (task.id !== target.taskId) return task
-        const subtasks = task.subtasks.map((subtask) => {
-          if (subtask.id !== target.subtaskId) return subtask
-          found = true
-          return { ...subtask, completed: !subtask.completed }
-        })
-        return found ? { ...task, subtasks } : task
-      })
-      return found ? { kind: "changed", state: { tasks } } : { kind: "rejected", reason: "missing-target" }
-    }
+    case "toggle":
+      return updateItem(state, mutation.target, (item) => ({ ...item, completed: !item.completed }))
+    case "rename":
+      return updateItem(state, mutation.target, (item) => ({ ...item, title: mutation.title }))
     case "remove": {
       if (mutation.target.kind === "task") {
         const tasks = state.tasks.filter((task) => task.id !== mutation.target.taskId)

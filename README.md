@@ -69,15 +69,16 @@ Keyboard controls work throughout the app. Mouse controls depend on terminal mou
 | Toggle selected item | `Space` | Click its checkbox |
 | Add a task | `a` | Click **Add task** |
 | Add a subtask | `s` | Click **Add subtask** |
-| Save a new task or subtask | `Enter` | Not available |
-| Cancel a new task or subtask | `Esc` | Not available |
+| Rename selected item | `r` | Click **Rename** |
+| Save a new or edited title | `Enter` | Not available |
+| Cancel a new or edited title | `Esc` | Not available |
 | Delete selected item | `d` | Click **Delete** |
 | Confirm deletion | `y` or `Enter` | Click **Delete** |
 | Cancel deletion | `n` or `Esc` | Click **Cancel** |
 | Scroll the list | Not available | Use the mouse wheel |
 | Quit | `q` or `Ctrl-C` | Not available |
 
-If a subtask is selected, adding a subtask creates a sibling under the same parent. Deleting a task that contains subtasks requires confirmation. Deleting that parent also deletes its subtasks.
+If a subtask is selected, adding a subtask creates a sibling under the same parent. Renaming opens the current title for editing and leaves completion state unchanged. Deleting a task that contains subtasks requires confirmation. Deleting that parent also deletes its subtasks.
 
 ## Data
 

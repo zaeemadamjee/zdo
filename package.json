@@ -1,6 +1,6 @@
 {
   "name": "@zaeemadamjee/zdo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A small local todo app for the terminal, built with Bun and OpenTUI",
   "license": "MIT",
   "author": "Zaeem Adamjee",

@@ -141,3 +141,65 @@ test("deleting a parent with children waits for confirmation", async () => {
   })
   expect(persisted().tasks).toHaveLength(0)
 })
+
+test("r opens the selected title for editing and Enter persists the new title", async () => {
+  const { setup, persisted } = await renderFixture()
+  await act(async () => {
+    setup.mockInput.pressKey("r")
+  })
+  await setup.flush()
+  expect(setup.captureCharFrame()).toContain("Rename task")
+
+  await act(async () => {
+    await setup.mockInput.typeText(" v2")
+  })
+  await setup.flush()
+  await act(async () => {
+    setup.mockInput.pressEnter()
+    await setup.waitFor(() => String(persisted().tasks[0]!.title) === "Parent v2")
+  })
+
+  expect(String(persisted().tasks[0]!.title)).toBe("Parent v2")
+  expect(persisted().tasks[0]!.completed).toBe(false)
+  expect(String(persisted().tasks[0]!.subtasks[0]!.title)).toBe("Child")
+})
+
+test("renaming a selected subtask changes only that subtask", async () => {
+  const { setup, persisted } = await renderFixture()
+  await act(async () => {
+    setup.mockInput.pressKey("j")
+    setup.mockInput.pressKey("r")
+  })
+  await setup.flush()
+  expect(setup.captureCharFrame()).toContain("Rename subtask")
+
+  await act(async () => {
+    await setup.mockInput.typeText("!")
+  })
+  await setup.flush()
+  await act(async () => {
+    setup.mockInput.pressEnter()
+    await setup.waitFor(() => String(persisted().tasks[0]!.subtasks[0]!.title) === "Child!")
+  })
+
+  expect(String(persisted().tasks[0]!.title)).toBe("Parent")
+})
+
+test("Esc cancels a rename without persisting anything", async () => {
+  const { setup, persisted } = await renderFixture()
+  await act(async () => {
+    setup.mockInput.pressKey("r")
+  })
+  await setup.flush()
+  await act(async () => {
+    await setup.mockInput.typeText(" discarded")
+  })
+  await setup.flush()
+  await act(async () => {
+    setup.mockInput.pressEscape()
+    await setup.waitFor(() => setup.captureCharFrame().includes("Rename cancelled"))
+  })
+
+  expect(setup.captureCharFrame()).toContain("Rename cancelled")
+  expect(String(persisted().tasks[0]!.title)).toBe("Parent")
+})

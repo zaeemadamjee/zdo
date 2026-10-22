@@ -75,3 +75,40 @@ test("close drains accepted work and rejects new intents", async () => {
   expect((await accepted).kind).toBe("committed")
   expect((await session.execute({ kind: "remove", target: { kind: "task", taskId: initial.tasks[0]!.id } })).kind).toBe("failed")
 })
+
+test("a blank rename is rejected without touching the store", async () => {
+  const initial = sessionFixture()
+  let replacements = 0
+  const store: TodoStore = {
+    load: async () => initial,
+    replace: async () => { replacements += 1 },
+  }
+  const session = await openTodoSession(store)
+  const result = await session.execute({
+    kind: "rename",
+    target: { kind: "task", taskId: initial.tasks[0]!.id },
+    title: "   ",
+  })
+
+  expect(result.kind).toBe("rejected")
+  expect(replacements).toBe(0)
+  expect(session.snapshot()).toEqual(initial)
+})
+
+test("a rename trims the title before persisting it", async () => {
+  const initial = sessionFixture()
+  let persisted = initial
+  const store: TodoStore = {
+    load: async () => initial,
+    replace: async (state) => { persisted = state },
+  }
+  const session = await openTodoSession(store)
+  const result = await session.execute({
+    kind: "rename",
+    target: { kind: "task", taskId: initial.tasks[0]!.id },
+    title: "  Renamed parent  ",
+  })
+
+  expect(result.kind).toBe("committed")
+  expect(String(persisted.tasks[0]!.title)).toBe("Renamed parent")
+})
