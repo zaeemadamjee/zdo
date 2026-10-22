@@ -1,0 +1,64 @@
+# Publishes @zaeemadamjee/zdo to npm when a merge to main changes the version
+# in package.json. Authenticates with npm trusted publishing (OIDC), so no
+# npm token is stored in this repository. The workflow filename must match the
+# one configured under Trusted Publisher on npmjs.com.
+name: Publish
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write # create the release tag
+  id-token: write # mint the OIDC token npm trusts
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck and test
+        run: bun run verify
+
+      # Node 24 ships npm 11, which is required for trusted publishing.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+
+      - name: Compare package.json version with npm
+        id: version
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          published=$(npm view "$name@$version" version 2>/dev/null || true)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ "$published" = "$version" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "$name@$version is already on npm; nothing to publish."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "$name@$version is not on npm; publishing."
+          fi
+
+      - name: Publish to npm
+        if: steps.version.outputs.changed == 'true'
+        run: npm publish
+
+      - name: Tag and create GitHub release
+        if: steps.version.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "v${{ steps.version.outputs.version }}" --generate-notes --title "v${{ steps.version.outputs.version }}"

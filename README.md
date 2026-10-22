@@ -94,6 +94,10 @@ Each save writes a unique temporary file beside the data file and atomically ren
 
 zdo is designed for one running process. If several instances edit the same file, the last completed save wins.
 
+## Release
+
+Bump `version` in `package.json` in a pull request. When that pull request merges to `main`, the Publish workflow runs the verification script, publishes the new version to npm through trusted publishing, and creates a matching GitHub release. Merges that leave the version unchanged publish nothing.
+
 ## Verify changes
 
 Run the repeatable verification script:
