@@ -25,6 +25,26 @@ function fixture(): TodoState {
   }
 }
 
+// The input parser holds a lone escape byte briefly to tell it apart from an
+// escape sequence, so waiting on render passes alone is not enough after Esc.
+// Each poll sleeps and flushes inside act() so the debounced key event and the
+// state updates it causes both land inside React's test boundary.
+async function waitForFrameText(
+  setup: Awaited<ReturnType<typeof renderFixture>>["setup"],
+  text: string,
+  timeoutMs = 1000,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10))
+      await setup.flush()
+    })
+    if (setup.captureCharFrame().includes(text)) return
+  }
+  throw new Error(`Timed out waiting for "${text}" in frame`)
+}
+
 async function renderFixture() {
   let persisted = fixture()
   const store: TodoStore = {
@@ -140,4 +160,66 @@ test("deleting a parent with children waits for confirmation", async () => {
     await setup.waitFor(() => persisted().tasks.length === 0)
   })
   expect(persisted().tasks).toHaveLength(0)
+})
+
+test("r opens the selected title for editing and Enter persists the new title", async () => {
+  const { setup, persisted } = await renderFixture()
+  await act(async () => {
+    setup.mockInput.pressKey("r")
+  })
+  await setup.flush()
+  expect(setup.captureCharFrame()).toContain("Rename task")
+
+  await act(async () => {
+    await setup.mockInput.typeText(" v2")
+  })
+  await setup.flush()
+  await act(async () => {
+    setup.mockInput.pressEnter()
+    await setup.waitFor(() => String(persisted().tasks[0]!.title) === "Parent v2")
+  })
+
+  expect(String(persisted().tasks[0]!.title)).toBe("Parent v2")
+  expect(persisted().tasks[0]!.completed).toBe(false)
+  expect(String(persisted().tasks[0]!.subtasks[0]!.title)).toBe("Child")
+})
+
+test("renaming a selected subtask changes only that subtask", async () => {
+  const { setup, persisted } = await renderFixture()
+  await act(async () => {
+    setup.mockInput.pressKey("j")
+    setup.mockInput.pressKey("r")
+  })
+  await setup.flush()
+  expect(setup.captureCharFrame()).toContain("Rename subtask")
+
+  await act(async () => {
+    await setup.mockInput.typeText("!")
+  })
+  await setup.flush()
+  await act(async () => {
+    setup.mockInput.pressEnter()
+    await setup.waitFor(() => String(persisted().tasks[0]!.subtasks[0]!.title) === "Child!")
+  })
+
+  expect(String(persisted().tasks[0]!.title)).toBe("Parent")
+})
+
+test("Esc cancels a rename without persisting anything", async () => {
+  const { setup, persisted } = await renderFixture()
+  await act(async () => {
+    setup.mockInput.pressKey("r")
+  })
+  await setup.flush()
+  await act(async () => {
+    await setup.mockInput.typeText(" discarded")
+  })
+  await setup.flush()
+  await act(async () => {
+    setup.mockInput.pressEscape()
+  })
+  await waitForFrameText(setup, "Rename cancelled")
+
+  expect(setup.captureCharFrame()).toContain("Rename cancelled")
+  expect(String(persisted().tasks[0]!.title)).toBe("Parent")
 })

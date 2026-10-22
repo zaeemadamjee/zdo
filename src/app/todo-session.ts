@@ -14,6 +14,7 @@ export type TodoIntent =
   | Readonly<{ kind: "add-task"; title: string }>
   | Readonly<{ kind: "add-subtask"; taskId: TaskId; title: string }>
   | Readonly<{ kind: "toggle"; target: ItemRef }>
+  | Readonly<{ kind: "rename"; target: ItemRef; title: string }>
   | Readonly<{ kind: "remove"; target: ItemRef }>
 
 export type ExecuteResult =
@@ -46,6 +47,11 @@ function prepareMutation(intent: TodoIntent): { mutation: TodoMutation; created:
     }
     case "toggle":
       return { mutation: intent, created: null }
+    case "rename": {
+      const title = parseTodoTitle(intent.title)
+      if (!title) return "Title must not be blank"
+      return { mutation: { kind: "rename", target: intent.target, title }, created: null }
+    }
     case "remove":
       return { mutation: intent, created: null }
   }

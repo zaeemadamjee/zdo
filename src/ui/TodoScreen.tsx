@@ -20,12 +20,16 @@ type AddMode = Readonly<{
   target: "task" | "subtask"
   parentTaskId?: Extract<ItemRef, { kind: "task" }>["taskId"]
 }>
+type RenameMode = Readonly<{
+  kind: "rename"
+  target: ItemRef
+}>
 type ConfirmMode = Readonly<{
   kind: "confirm-delete"
   target: Extract<ItemRef, { kind: "task" }>
   childCount: number
 }>
-type ScreenMode = BrowseMode | AddMode | ConfirmMode
+type ScreenMode = BrowseMode | AddMode | RenameMode | ConfirmMode
 
 export type TodoScreenProps = Readonly<{
   session: TodoSession
@@ -48,6 +52,11 @@ const colors = {
 
 function itemKey(ref: ItemRef): string {
   return ref.kind === "task" ? `task:${ref.taskId}` : `subtask:${ref.taskId}:${ref.subtaskId}`
+}
+
+function draftPanelTitle(mode: AddMode | RenameMode): string {
+  if (mode.kind === "add") return mode.target === "task" ? " New task " : " New subtask "
+  return mode.target.kind === "task" ? " Rename task " : " Rename subtask "
 }
 
 function isInside(event: MouseEvent): boolean {
@@ -287,11 +296,29 @@ export function TodoScreen({ session, onQuit }: TodoScreenProps) {
     setNotice("Enter a subtask title")
   }
 
-  const submitAdd = (title: string) => {
-    if (mode.kind !== "add") return
-    const intent: TodoIntent = mode.target === "task"
-      ? { kind: "add-task", title }
-      : { kind: "add-subtask", taskId: mode.parentTaskId!, title }
+  const beginRename = () => {
+    const currentRow = rows.find((row) => sameItemRef(row.ref, selectionRef.current)) ?? null
+    if (pendingRef.current || mode.kind !== "browse") return
+    if (!currentRow) {
+      setNotice("Select an item before renaming")
+      return
+    }
+    setDraft(currentRow.title)
+    setMode({ kind: "rename", target: currentRow.ref })
+    setNotice("Edit the title, then press Enter")
+  }
+
+  const submitDraft = (title: string) => {
+    let intent: TodoIntent
+    if (mode.kind === "add") {
+      intent = mode.target === "task"
+        ? { kind: "add-task", title }
+        : { kind: "add-subtask", taskId: mode.parentTaskId!, title }
+    } else if (mode.kind === "rename") {
+      intent = { kind: "rename", target: mode.target, title }
+    } else {
+      return
+    }
     setMode({ kind: "browse" })
     void execute(intent, { kind: "retain" })
   }
@@ -330,14 +357,14 @@ export function TodoScreen({ session, onQuit }: TodoScreenProps) {
       return
     }
 
-    if (mode.kind === "add") {
+    if (mode.kind === "add" || mode.kind === "rename") {
       if (key.name === "escape") {
         key.preventDefault()
         setMode({ kind: "browse" })
-        setNotice("Add cancelled")
+        setNotice(mode.kind === "add" ? "Add cancelled" : "Rename cancelled")
       } else if (key.name === "return") {
         key.preventDefault()
-        submitAdd(draft)
+        submitDraft(draft)
       }
       return
     }
@@ -384,6 +411,10 @@ export function TodoScreen({ session, onQuit }: TodoScreenProps) {
       case "s":
         key.preventDefault()
         beginAddSubtask()
+        break
+      case "r":
+        key.preventDefault()
+        beginRename()
         break
       case "space":
         key.preventDefault()
@@ -452,8 +483,8 @@ export function TodoScreen({ session, onQuit }: TodoScreenProps) {
         ))}
       </box>
 
-      {mode.kind === "add" ? (
-        <box height={3} width="100%" border={true} borderColor={colors.accent} title={mode.target === "task" ? " New task " : " New subtask "}>
+      {mode.kind === "add" || mode.kind === "rename" ? (
+        <box height={3} width="100%" border={true} borderColor={colors.accent} title={draftPanelTitle(mode)}>
           <input
             focused={true}
             width="100%"
@@ -511,6 +542,15 @@ export function TodoScreen({ session, onQuit }: TodoScreenProps) {
           setHovered={setHovered}
           pressHandlers={pressHandlers}
           onPress={beginAddSubtask}
+        />
+        <ActionButton
+          id="rename"
+          label="[r] Rename"
+          disabled={pending || mode.kind !== "browse" || selection === null}
+          hovered={hovered === "rename"}
+          setHovered={setHovered}
+          pressHandlers={pressHandlers}
+          onPress={beginRename}
         />
         <ActionButton
           id="delete"
