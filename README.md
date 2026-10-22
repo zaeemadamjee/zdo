@@ -2,7 +2,7 @@
 
 zdo is a small local todo app for the terminal, built with Bun, TypeScript, React, and OpenTUI. It supports one level of subtasks. A task and its subtasks have independent completion states. Completing one never changes the others.
 
-![zdo running in a terminal](assets/app.jpeg)
+![zdo running in a terminal](assets/app.png)
 
 ## Install zdo
 
